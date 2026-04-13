@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      FRONTEND_URL: "http://localhost:3000"
+      DATABASE_URL: "postgresql://ci_user:ci_password@localhost:5432/skybook?sslmode=require"
+      DIRECT_URL: "postgresql://ci_user:ci_password@localhost:5432/skybook?sslmode=require"
+      BETTER_AUTH_SECRET: "ci_dummy_secret_value_32_chars_minimum"
+      STRIPE_SECRET_KEY: "sk_test_ci_dummy_key"
+      STRIPE_WEBHOOK_SECRET: "whsec_ci_dummy_secret"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build

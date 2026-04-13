@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  PASSENGER
+  ADMIN
+}
+
+enum FlightStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  fullName     String
+  role         UserRole  @default(PASSENGER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  bookings     Booking[]
+}
+
+model Flight {
+  id                String       @id @default(cuid())
+  flightNumber      String       @unique
+  origin            String
+  destination       String
+  departureDateTime DateTime
+  arrivalDateTime   DateTime
+  totalSeats        Int
+  bookedSeats       Int          @default(0)
+  pricePerSeat      Decimal      @db.Decimal(10, 2)
+  status            FlightStatus @default(ACTIVE)
+  cancelReason      String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  bookings          Booking[]
+
+  @@index([origin, destination, departureDateTime])
+}
+
+model Booking {
+  id               String        @id @default(cuid())
+  bookingReference String        @unique
+  flightId         String
+  passengerId      String
+  seatNumber       String
+  totalPrice       Decimal       @db.Decimal(10, 2)
+  status           BookingStatus @default(CONFIRMED)
+  paymentSessionId String?       @unique
+  paymentCompletedAt DateTime?
+  webhookProcessedAt DateTime?
+  bookingDate      DateTime      @default(now())
+  cancelledDate    DateTime?
+  cancelReason     String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  flight           Flight        @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  passenger        User          @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  @@index([flightId, seatNumber])
+  @@index([flightId, passengerId])
+  @@index([passengerId])
+}
+
+model StripeWebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  type      String
+  bookingId String?
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}

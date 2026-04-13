@@ -1,0 +1,425 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand Colors */
+  --color-primary-rich: #0e2235;
+  --color-primary-accent: #0f6cbd;
+  --color-secondary-deep: #17456f;
+  --color-secondary-light: #d7ecff;
+
+  /* Neutral Surface + Text */
+  --color-surface-main: #ffffff;
+  --color-surface-secondary: #f3f7fb;
+  --color-surface-tertiary: #e9f0f8;
+  --color-text-primary: #0f2133;
+  --color-text-secondary: #4f6479;
+  --color-text-accent: #0f6cbd;
+
+  /* Semantic */
+  --color-success: #1f8b4c;
+  --color-warning: #d18a1b;
+  --color-danger: #cf3f3f;
+  --color-info: #0f6cbd;
+
+  /* Overlays + Shadows */
+  --color-overlay-dark: rgba(15, 33, 51, 0.72);
+  --color-overlay-light: rgba(15, 108, 189, 0.12);
+  --shadow-sm: 0 4px 12px rgba(15, 33, 51, 0.08);
+  --shadow-md: 0 14px 30px rgba(15, 33, 51, 0.12);
+  --shadow-lg: 0 24px 46px rgba(15, 33, 51, 0.18);
+  --shadow-xl: 0 34px 60px rgba(15, 33, 51, 0.22);
+  --shadow-gold: 0 10px 24px rgba(15, 108, 189, 0.18);
+
+  /* Typography */
+  --font-family-sans: "Aptos", "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-family-mono: "Iosevka", "JetBrains Mono", "Consolas", monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing Scale */
+  --space-base: 8px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 999px;
+
+  /* Backwards compat with existing components */
+  --surface-base: #f3f7fb;
+  --surface-raised: #ffffff;
+  --surface-muted: #eaf1f8;
+  --text-default: #0f2133;
+  --text-muted: #4f6479;
+  --text-subtle: #6f8094;
+  --border-default: #cad8e6;
+  --border-strong: #88a8c6;
+  --primary-50: #eaf4ff;
+  --primary-100: #d9ecff;
+  --primary-500: #0f6cbd;
+  --primary-600: #0b5a9d;
+  --primary-700: #084a82;
+  --primary-contrast: #ffffff;
+  --neutral-100: #eef3f8;
+  --neutral-300: #c2cfde;
+  --neutral-500: #5c7289;
+  --neutral-700: #2c4359;
+  --success-100: #dff5e7;
+  --success-500: #1f8b4c;
+  --success-700: #15663a;
+  --warning-100: #fff1d9;
+  --warning-500: #d18a1b;
+  --warning-700: #8a5d11;
+  --danger-100: #ffe3e3;
+  --danger-500: #cf3f3f;
+  --danger-600: #dc2626;
+  --danger-700: #b91c1c;
+  --primary-accent: var(--primary-500);
+}
+
+[data-theme="dark"] {
+  --surface-base: #0b1624;
+  --surface-raised: #112033;
+  --surface-muted: #182c44;
+  --text-default: #e8f1fb;
+  --text-muted: #b7c7da;
+  --text-subtle: #8ea2ba;
+  --border-default: rgba(119, 160, 199, 0.36);
+  --border-strong: rgba(143, 188, 234, 0.6);
+  --shadow-sm: 0 12px 24px rgba(3, 11, 20, 0.52);
+  --shadow-md: 0 24px 48px rgba(3, 11, 20, 0.62);
+  --primary-50: #16385a;
+  --primary-100: #1e4a74;
+  --primary-500: #5cb4ff;
+  --primary-600: #3aa5ff;
+  --primary-700: #1f91f0;
+  --primary-contrast: #081624;
+  --neutral-100: #1e2f42;
+  --neutral-300: #395169;
+  --neutral-500: #7f9ab5;
+  --neutral-700: #c6d6e8;
+  --success-100: rgba(31, 139, 76, 0.22);
+  --warning-100: rgba(209, 138, 27, 0.22);
+  --danger-100: rgba(207, 63, 63, 0.2);
+  --color-surface-main: #0b1624;
+  --color-surface-secondary: #12263b;
+  --color-surface-tertiary: #18324c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface-base: #0b1624;
+    --surface-raised: #112033;
+    --surface-muted: #182c44;
+    --text-default: #e8f1fb;
+    --text-muted: #b7c7da;
+    --text-subtle: #8ea2ba;
+    --border-default: rgba(119, 160, 199, 0.36);
+    --border-strong: rgba(143, 188, 234, 0.6);
+    --shadow-sm: 0 12px 24px rgba(3, 11, 20, 0.52);
+    --shadow-md: 0 24px 48px rgba(3, 11, 20, 0.62);
+
+    --primary-50: #16385a;
+    --primary-100: #1e4a74;
+    --primary-500: #5cb4ff;
+    --primary-600: #3aa5ff;
+    --primary-700: #1f91f0;
+    --primary-contrast: #081624;
+
+    --neutral-100: #1e2f42;
+    --neutral-300: #395169;
+    --neutral-500: #7f9ab5;
+    --neutral-700: #c6d6e8;
+
+    --success-100: rgba(31, 139, 76, 0.22);
+    --warning-100: rgba(209, 138, 27, 0.22);
+    --danger-100: rgba(207, 63, 63, 0.2);
+  }
+}
+
+@theme inline {
+  --color-background: var(--surface-base);
+  --color-foreground: var(--text-default);
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+}
+
+body {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(15, 108, 189, 0.15) 0%, transparent 44%),
+    linear-gradient(135deg, var(--surface-base) 0%, var(--color-surface-secondary) 100%);
+  color: var(--text-default);
+  font-family: var(--font-family-sans), sans-serif;
+  font-weight: var(--font-weight-normal);
+}
+
+.page-atmosphere {
+  position: relative;
+  isolation: isolate;
+}
+
+.page-atmosphere::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url("/aviation-grid.svg") center/cover no-repeat;
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+
+.hero-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 1.25rem;
+}
+
+.hero-frame::after {
+  content: "";
+  position: absolute;
+  inset: auto -30% -32% -30%;
+  height: 56%;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(6, 13, 22, 0.7), transparent 70%);
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-up {
+  animation: fade-rise 620ms ease both;
+}
+
+.reveal-up-delay-1 {
+  animation: fade-rise 760ms ease both;
+}
+
+.reveal-up-delay-2 {
+  animation: fade-rise 900ms ease both;
+}
+
+.card-shell {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.card-shell-luxury {
+  border: 2px solid var(--primary-accent);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-gold);
+}
+
+.field {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--text-default);
+  padding: calc(var(--space-base) * 1) calc(var(--space-base) * 1.25);
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.field:focus {
+  outline: 2px solid rgba(15, 108, 189, 0.35);
+  outline-offset: 1px;
+  border-color: var(--border-strong);
+}
+
+.field-error {
+  border-color: var(--danger-500);
+}
+
+.btn-primary {
+  border-radius: var(--radius-full);
+  border: none;
+  background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+  color: var(--primary-contrast);
+  font-weight: var(--font-weight-bold);
+  padding: calc(var(--space-base) * 1) calc(var(--space-base) * 2);
+  font-size: var(--font-size-sm);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold);
+  filter: brightness(1.08);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--text-default);
+  font-weight: var(--font-weight-semibold);
+  padding: calc(var(--space-base) * 0.875) calc(var(--space-base) * 1.75);
+  font-size: var(--font-size-sm);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-muted);
+  border-color: var(--primary-accent);
+}
+
+.btn-danger {
+  border-radius: var(--radius-full);
+  border: 1px solid var(--danger-500);
+  background: var(--danger-100);
+  color: var(--danger-700);
+  font-weight: 700;
+  padding: calc(var(--space-base) * 0.78) calc(var(--space-base) * 1.4);
+}
+
+.btn-danger:hover {
+  background: #ffd3d3;
+}
+
+.text-text-default {
+  color: var(--text-default);
+}
+
+.text-text-muted {
+  color: var(--text-muted);
+}
+
+.text-text-subtle {
+  color: var(--text-subtle);
+}
+
+.text-text-secondary {
+  color: var(--text-muted);
+}
+
+.text-primary-accent {
+  color: var(--primary-accent);
+}
+
+.text-color-success {
+  color: var(--success-700);
+}
+
+.bg-success-100 {
+  background: var(--success-100);
+}
+
+.border-color-success {
+  border-color: var(--success-700);
+}
+
+.text-danger-600 {
+  color: var(--danger-600);
+}
+
+.bg-surface-raised {
+  background: var(--surface-raised);
+}
+
+.bg-surface-muted {
+  background: var(--surface-muted);
+}
+
+.border-border-default {
+  border-color: var(--border-default);
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid rgba(15, 108, 189, 0.45);
+  outline-offset: 2px;
+}
+
+.alert-danger {
+  border: 1px solid #f0b4b4;
+  border-radius: var(--radius-md);
+  background: var(--danger-100);
+  color: var(--danger-700);
+  padding: calc(var(--space-base) * 1) calc(var(--space-base) * 1.25);
+}
+
+.ticket-print-surface {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@media print {
+  header,
+  .ticket-page-header,
+  .ticket-actions {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .ticket-print-surface {
+    max-width: none !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-up,
+  .reveal-up-delay-1,
+  .reveal-up-delay-2 {
+    animation: none !important;
+  }
+}

@@ -19,6 +19,13 @@ import {
   TrendUp,
 } from '@phosphor-icons/react';
 
+import {
+  formatAirportLabel,
+  getAirportDirectory,
+  resolveAirportCode,
+} from '@/lib/reference/airport-labels';
+import { AirportCombobox } from '@/components/ui/airport-combobox';
+
 const iataExamples = ['LOS', 'NBO', 'LHR', 'DXB', 'JFK', 'CDG'];
 
 const highlights = [
@@ -73,23 +80,39 @@ const destinationCards = [
 export default function LandingPage() {
   const router = useRouter();
   const today = new Date().toISOString().split('T')[0];
-  const [origin, setOrigin] = useState('LOS');
-  const [destination, setDestination] = useState('NBO');
+  const [origin, setOrigin] = useState(formatAirportLabel('LOS'));
+  const [destination, setDestination] = useState(formatAirportLabel('NBO'));
   const [date, setDate] = useState(today);
-
-  const quickSearchHref = useMemo(() => {
-    const query = new URLSearchParams({
-      origin: origin.trim().toUpperCase(),
-      destination: destination.trim().toUpperCase(),
-      date,
-    });
-
-    return `/search?${query.toString()}`;
-  }, [date, destination, origin]);
+  const [searchError, setSearchError] = useState('');
+  const airportDirectory = useMemo(() => getAirportDirectory(), []);
 
   function handleQuickSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    router.push(quickSearchHref);
+    setSearchError('');
+
+    const originCode = resolveAirportCode(origin);
+    const destinationCode = resolveAirportCode(destination);
+
+    if (!originCode || !destinationCode) {
+      setSearchError('Enter valid airports. Example: Lagos (LOS), Nairobi (NBO), or LOS/NBO.');
+      return;
+    }
+
+    if (originCode === destinationCode) {
+      setSearchError('Origin and destination must be different.');
+      return;
+    }
+
+    setOrigin(formatAirportLabel(originCode));
+    setDestination(formatAirportLabel(destinationCode));
+
+    const query = new URLSearchParams({
+      origin: originCode,
+      destination: destinationCode,
+      date,
+    });
+
+    router.push(`/search?${query.toString()}`);
   }
 
   return (
@@ -136,7 +159,7 @@ export default function LandingPage() {
             <div className="grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-200">Search</p>
-                <p className="mt-1 text-sm font-semibold text-white">IATA route codes</p>
+                <p className="mt-1 text-sm font-semibold text-white">City, airport, or IATA</p>
               </div>
               <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-200">Payments</p>
@@ -157,31 +180,25 @@ export default function LandingPage() {
 
             <form onSubmit={handleQuickSearch} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="space-y-1.5 text-sm text-text-muted" htmlFor="home-origin">
-                  Origin airport code
-                  <input
-                    id="home-origin"
-                    className="field"
-                    value={origin}
-                    maxLength={3}
-                    onChange={(event) => setOrigin(event.target.value.toUpperCase())}
-                    placeholder="LOS"
-                    required
-                  />
-                </label>
+                <AirportCombobox
+                  id="home-origin"
+                  label="Origin city or airport"
+                  value={origin}
+                  onChange={setOrigin}
+                  options={airportDirectory}
+                  placeholder={formatAirportLabel('LOS')}
+                  required
+                />
 
-                <label className="space-y-1.5 text-sm text-text-muted" htmlFor="home-destination">
-                  Destination airport code
-                  <input
-                    id="home-destination"
-                    className="field"
-                    value={destination}
-                    maxLength={3}
-                    onChange={(event) => setDestination(event.target.value.toUpperCase())}
-                    placeholder="NBO"
-                    required
-                  />
-                </label>
+                <AirportCombobox
+                  id="home-destination"
+                  label="Destination city or airport"
+                  value={destination}
+                  onChange={setDestination}
+                  options={airportDirectory}
+                  placeholder={formatAirportLabel('NBO')}
+                  required
+                />
               </div>
 
               <label className="space-y-1.5 text-sm text-text-muted" htmlFor="home-date">
@@ -197,15 +214,19 @@ export default function LandingPage() {
                 />
               </label>
 
+              {searchError ? (
+                <p className="alert-danger text-sm">{searchError}</p>
+              ) : null}
+
               <div className="rounded-xl border border-border-default bg-surface-muted px-4 py-3 text-xs text-text-muted">
-                Airport entries use three-letter IATA codes. Try one of these examples:
+                Type city, airport, or IATA code. Try one of these examples:
                 <div className="mt-2 flex flex-wrap gap-2">
                   {iataExamples.map((code) => (
                     <span
                       key={code}
                       className="rounded-full border border-border-default bg-surface-raised px-2.5 py-1 font-mono text-[11px] font-semibold text-text-default"
                     >
-                      {code}
+                      {formatAirportLabel(code)}
                     </span>
                   ))}
                 </div>

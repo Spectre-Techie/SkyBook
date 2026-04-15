@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { Check, X } from "@phosphor-icons/react";
+import { Check, Eye, EyeSlash, X } from "@phosphor-icons/react";
 
 import {
   registerAccount,
@@ -54,6 +54,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
   const [loading, setLoading] = useState(false);
   const [showPasswordChecklist, setShowPasswordChecklist] = useState(false);
@@ -117,7 +119,7 @@ export default function RegisterPage() {
               required
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
-              placeholder="John Doe"
+              placeholder="Full name"
               className={`field w-full ${fieldErrors.fullName ? "field-error" : ""}`}
             />
             {fieldErrors.fullName && <p className="text-danger-600 text-xs mt-1">{fieldErrors.fullName}</p>}
@@ -141,16 +143,27 @@ export default function RegisterPage() {
           {/* Password */}
           <div>
             <label className="block text-sm font-semibold text-text-default mb-2">Password</label>
-            <input
-              type="password"
-              required
-              autoComplete="new-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onFocus={() => setShowPasswordChecklist(true)}
-              placeholder="••••••••"
-              className={`field w-full ${fieldErrors.password ? "field-error" : ""}`}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="new-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onFocus={() => setShowPasswordChecklist(true)}
+                placeholder="••••••••"
+                className={`field w-full pr-11 ${fieldErrors.password ? "field-error" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="password-toggle focus-ring absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeSlash size={18} weight="bold" /> : <Eye size={18} weight="bold" />}
+              </button>
+            </div>
 
             {/* Password Requirements Checklist */}
             {(showPasswordChecklist || password) && (
@@ -177,14 +190,25 @@ export default function RegisterPage() {
           {/* Confirm Password */}
           <div>
             <label className="block text-sm font-semibold text-text-default mb-2">Confirm Password</label>
-            <input
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="••••••••"
-              className={`field w-full ${passwordMismatches ? "field-error" : ""}`}
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="••••••••"
+                className={`field w-full pr-11 ${passwordMismatches ? "field-error" : ""}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((value) => !value)}
+                className="password-toggle focus-ring absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full"
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                title={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              >
+                {showConfirmPassword ? <EyeSlash size={18} weight="bold" /> : <Eye size={18} weight="bold" />}
+              </button>
+            </div>
             {passwordMismatches && <p className="text-danger-600 text-xs mt-1">Passwords do not match</p>}
           </div>
 

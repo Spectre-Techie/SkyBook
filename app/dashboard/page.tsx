@@ -16,6 +16,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
+import { formatRouteLabel } from "@/lib/reference/airport-labels";
+
 type SessionPayload = {
   authenticated: boolean;
   user: {
@@ -278,7 +280,7 @@ export default function DashboardPage() {
                 </div>
 
                 <h2 className="mt-3 text-xl font-semibold text-text-default">
-                  {booking.flight.origin} to {booking.flight.destination}
+                  {formatRouteLabel(booking.flight.origin, booking.flight.destination)}
                 </h2>
 
                 <div className="mt-3 grid gap-2 text-sm text-text-muted sm:grid-cols-2">

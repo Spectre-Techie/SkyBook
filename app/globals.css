@@ -263,6 +263,20 @@ body {
   border-color: var(--danger-500);
 }
 
+.password-toggle {
+  color: var(--text-muted);
+}
+
+.password-toggle:hover {
+  color: var(--text-default);
+  background: var(--surface-muted);
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 .btn-primary {
   border-radius: var(--radius-full);
   border: none;

@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";
 import { serializeFlight } from "@/lib/flights/serialize";
+import { ensureMockFlights } from "@/lib/flights/mock";
 import { jsonError, serverError, validationError } from "@/lib/http/responses";
 import { createFlightSchema } from "@/lib/validation/schemas";
 
@@ -42,6 +43,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       if (!auth.ok) {
         return auth.response;
       }
+    } else {
+      await ensureMockFlights(prisma, {
+        minimumUpcomingActive: 240,
+        daysAhead: 30,
+      });
     }
 
     const where: Prisma.FlightWhereInput = includeAll
@@ -79,7 +85,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           message: "date must be in YYYY-MM-DD format.",
         });
       }
-      where.departureDateTime = range;
+
+      if (includeAll) {
+        where.departureDateTime = range;
+      } else {
+        const start = range.gte > now ? range.gte : now;
+        if (start >= range.lt) {
+          return NextResponse.json({ data: [] });
+        }
+
+        where.departureDateTime = {
+          gte: start,
+          lt: range.lt,
+        };
+      }
     }
 
     const flights = await prisma.flight.findMany({

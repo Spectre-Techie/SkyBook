@@ -2,17 +2,47 @@ import { z } from "zod";
 
 import { normalizeSeatInput } from "@/lib/bookings/seat";
 
+function extractIataCode(value: string): string {
+  const normalized = value.trim().toUpperCase();
+  if (/^[A-Z]{3}$/.test(normalized)) {
+    return normalized;
+  }
+
+  const parenthesizedMatch = normalized.match(/\(([A-Z]{3})\)/);
+  if (parenthesizedMatch) {
+    return parenthesizedMatch[1];
+  }
+
+  const standaloneCodes = normalized.match(/\b[A-Z]{3}\b/g);
+  if (standaloneCodes && standaloneCodes.length > 0) {
+    return standaloneCodes[standaloneCodes.length - 1];
+  }
+
+  return normalized;
+}
+
+function normalizeFlightNumber(value: string): string {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "");
+}
+
 const iataCode = z
   .string()
-  .trim()
-  .toUpperCase()
-  .regex(/^[A-Z]{3}$/, "IATA code must be 3 uppercase letters.");
+  .transform(extractIataCode)
+  .refine(
+    (value) => /^[A-Z]{3}$/.test(value),
+    "IATA code must be 3 uppercase letters (for example: LOS or Lagos (LOS)).",
+  );
 
 const flightNumber = z
   .string()
-  .trim()
-  .toUpperCase()
-  .regex(/^[A-Z0-9]{3,8}$/, "Flight number must be 3-8 alphanumeric characters.");
+  .transform(normalizeFlightNumber)
+  .refine(
+    (value) => /^[A-Z0-9]{3,8}$/.test(value),
+    "Flight number must be 3-8 alphanumeric characters.",
+  );
 
 const password = z
   .string()

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
+import { Eye, EyeSlash } from "@phosphor-icons/react";
 
 import { loginAccount } from "@/client/api/auth";
 import { getErrorMessage } from "@/client/api/error-handler";
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -68,15 +70,26 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-semibold text-text-default mb-2">Password</label>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              className="field w-full"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                className="field w-full pr-11"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                className="password-toggle focus-ring absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeSlash size={18} weight="bold" /> : <Eye size={18} weight="bold" />}
+              </button>
+            </div>
           </div>
 
           {error ? (

@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
+import { formatAirportLabel, formatRouteLabel } from "@/lib/reference/airport-labels";
+
 type SessionPayload = {
   authenticated: boolean;
   user: {
@@ -43,6 +45,63 @@ const INITIAL_FORM: FlightForm = {
   totalSeats: 120,
   pricePerSeat: 100,
 };
+
+type ValidationDetail = {
+  path?: string;
+  message?: string;
+};
+
+function extractIataCode(value: string): string {
+  const normalized = value.trim().toUpperCase();
+  if (/^[A-Z]{3}$/.test(normalized)) {
+    return normalized;
+  }
+
+  const parenthesizedMatch = normalized.match(/\(([A-Z]{3})\)/);
+  if (parenthesizedMatch) {
+    return parenthesizedMatch[1];
+  }
+
+  const standaloneCodes = normalized.match(/\b[A-Z]{3}\b/g);
+  if (standaloneCodes && standaloneCodes.length > 0) {
+    return standaloneCodes[standaloneCodes.length - 1];
+  }
+
+  return normalized;
+}
+
+function normalizeFlightNumber(value: string): string {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "");
+}
+
+function formatValidationError(
+  payload: { message?: string; details?: ValidationDetail[] },
+  fallback: string,
+): string {
+  if (!payload.details || payload.details.length === 0) {
+    return payload.message ?? fallback;
+  }
+
+  const detailMessage = payload.details
+    .map((detail) => {
+      if (!detail?.message) {
+        return null;
+      }
+
+      return detail.path ? `${detail.path}: ${detail.message}` : detail.message;
+    })
+    .filter((value): value is string => Boolean(value))
+    .join(" | ");
+
+  if (!detailMessage) {
+    return payload.message ?? fallback;
+  }
+
+  return `${payload.message ?? fallback} ${detailMessage}`;
+}
 
 export default function AdminFlightsPage() {
   const [session, setSession] = useState<SessionPayload | null>(null);
@@ -106,25 +165,39 @@ export default function AdminFlightsPage() {
     setError("");
 
     try {
+      const departureDateTime = new Date(form.departureDateTime);
+      const arrivalDateTime = new Date(form.arrivalDateTime);
+
+      if (
+        Number.isNaN(departureDateTime.getTime()) ||
+        Number.isNaN(arrivalDateTime.getTime())
+      ) {
+        setError("Please provide valid departure and arrival date/time.");
+        return;
+      }
+
       const response = await fetch("/api/flights", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          flightNumber: form.flightNumber.trim().toUpperCase(),
-          origin: form.origin.trim().toUpperCase(),
-          destination: form.destination.trim().toUpperCase(),
-          departureDateTime: new Date(form.departureDateTime).toISOString(),
-          arrivalDateTime: new Date(form.arrivalDateTime).toISOString(),
+          flightNumber: normalizeFlightNumber(form.flightNumber),
+          origin: extractIataCode(form.origin),
+          destination: extractIataCode(form.destination),
+          departureDateTime: departureDateTime.toISOString(),
+          arrivalDateTime: arrivalDateTime.toISOString(),
           totalSeats: form.totalSeats,
           pricePerSeat: form.pricePerSeat,
         }),
       });
 
-      const payload = (await response.json()) as { message?: string };
+      const payload = (await response.json()) as {
+        message?: string;
+        details?: ValidationDetail[];
+      };
       if (!response.ok) {
-        setError(payload.message ?? "Unable to create flight.");
+        setError(formatValidationError(payload, "Unable to create flight."));
         return;
       }
 
@@ -201,26 +274,26 @@ export default function AdminFlightsPage() {
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <input
             className="field"
-            placeholder="Flight number (SB501)"
+            placeholder="Flight number (for example: KQ531 or KQ-531)"
             value={form.flightNumber}
             onChange={(event) => setForm((prev) => ({ ...prev, flightNumber: event.target.value }))}
             required
           />
           <input
             className="field"
-            placeholder="Origin (LOS)"
+            placeholder={formatAirportLabel("LOS")}
             value={form.origin}
             onChange={(event) => setForm((prev) => ({ ...prev, origin: event.target.value }))}
             required
-            maxLength={3}
+            maxLength={32}
           />
           <input
             className="field"
-            placeholder="Destination (NBO)"
+            placeholder={formatAirportLabel("NBO")}
             value={form.destination}
             onChange={(event) => setForm((prev) => ({ ...prev, destination: event.target.value }))}
             required
-            maxLength={3}
+            maxLength={32}
           />
           <input
             type="number"
@@ -268,6 +341,10 @@ export default function AdminFlightsPage() {
             min={1}
           />
         </div>
+        <p className="mt-3 text-xs text-text-muted">
+          Route fields accept IATA codes (for example: LOS) or labels such as {formatAirportLabel("LOS")}
+          .
+        </p>
 
         <div className="mt-4 flex justify-end">
           <button type="submit" className="btn-primary" disabled={creating}>
@@ -297,7 +374,7 @@ export default function AdminFlightsPage() {
             <div>
               <h3 className="text-lg font-semibold text-text-default">{flight.flightNumber}</h3>
               <p className="text-sm text-text-muted">
-                {flight.origin} to {flight.destination} - {new Date(flight.departureDateTime).toLocaleString()}
+                {formatRouteLabel(flight.origin, flight.destination)} - {new Date(flight.departureDateTime).toLocaleString()}
               </p>
               <p className="mt-1 text-xs uppercase tracking-wide text-[var(--primary-700)]">
                 {flight.status} - {flight.bookedSeats}/{flight.totalSeats} booked

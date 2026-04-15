@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { serializeFlight } from "@/lib/flights/serialize";
+import { ensureMockFlights } from "@/lib/flights/mock";
 import { jsonError, serverError } from "@/lib/http/responses";
 
 function getDateRange(dateValue: string): { gte: Date; lt: Date } | null {
@@ -25,6 +26,11 @@ function getDateRange(dateValue: string): { gte: Date; lt: Date } | null {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
+    await ensureMockFlights(prisma, {
+      minimumUpcomingActive: 240,
+      daysAhead: 30,
+    });
+
     const origin = request.nextUrl.searchParams.get("origin")?.trim().toUpperCase() ?? "";
     const destination =
       request.nextUrl.searchParams.get("destination")?.trim().toUpperCase() ?? "";
@@ -52,12 +58,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    const now = new Date();
+    const start = dateRange.gte > now ? dateRange.gte : now;
+
+    if (start >= dateRange.lt) {
+      return NextResponse.json({
+        data: [],
+        meta: {
+          count: 0,
+        },
+      });
+    }
+
     const flights = await prisma.flight.findMany({
       where: {
         origin,
         destination,
         status: FlightStatus.ACTIVE,
-        departureDateTime: dateRange,
+        departureDateTime: {
+          gte: start,
+          lt: dateRange.lt,
+        },
       },
       orderBy: [{ departureDateTime: "asc" }, { pricePerSeat: "asc" }],
     });

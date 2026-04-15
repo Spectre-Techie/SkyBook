@@ -14,6 +14,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import {
+  formatAirportLabel,
+  formatRouteLabel,
+  getAirportDirectory,
+  resolveAirportCode,
+} from "@/lib/reference/airport-labels";
+import { AirportCombobox } from "@/components/ui/airport-combobox";
+
 type Flight = {
   id: string;
   flightNumber: string;
@@ -50,10 +58,6 @@ type RouteRecommendationResponse = {
 
 const iataExamples = ["LOS", "NBO", "DXB", "LHR", "JFK", "CDG"];
 
-function normalizeIata(value: string): string {
-  return value.trim().toUpperCase().slice(0, 3);
-}
-
 function seatUsageWidthClass(percent: number): string {
   if (percent >= 96) return "w-full";
   if (percent >= 88) return "w-11/12";
@@ -78,8 +82,9 @@ function tomorrowIsoDate(): string {
 }
 
 export default function SearchPage() {
-  const [origin, setOrigin] = useState("LOS");
-  const [destination, setDestination] = useState("NBO");
+  const [origin, setOrigin] = useState(formatAirportLabel("LOS"));
+  const [destination, setDestination] = useState(formatAirportLabel("NBO"));
+  const [lastSearchOriginCode, setLastSearchOriginCode] = useState("LOS");
   const [date, setDate] = useState(tomorrowIsoDate);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -93,6 +98,7 @@ export default function SearchPage() {
   const [routeRecommendationsWarning, setRouteRecommendationsWarning] = useState("");
 
   const minDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const airportDirectory = useMemo(() => getAirportDirectory(), []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -100,20 +106,20 @@ export default function SearchPage() {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const queryOrigin = normalizeIata(params.get("origin") ?? "");
-    const queryDestination = normalizeIata(params.get("destination") ?? "");
+    const queryOrigin = resolveAirportCode(params.get("origin") ?? "");
+    const queryDestination = resolveAirportCode(params.get("destination") ?? "");
     const queryDate = params.get("date");
 
-    const nextOrigin = queryOrigin.length === 3 ? queryOrigin : null;
-    const nextDestination = queryDestination.length === 3 ? queryDestination : null;
+    const nextOrigin = queryOrigin;
+    const nextDestination = queryDestination;
     const nextDate = queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate) ? queryDate : null;
 
     if (!nextOrigin || !nextDestination || !nextDate) {
       return;
     }
 
-    setOrigin(nextOrigin);
-    setDestination(nextDestination);
+    setOrigin(formatAirportLabel(nextOrigin));
+    setDestination(formatAirportLabel(nextDestination));
     setDate(nextDate);
     void runSearch(nextOrigin, nextDestination, nextDate);
   }, []);
@@ -166,8 +172,8 @@ export default function SearchPage() {
       return;
     }
 
-    const depIata = normalizeIata(origin);
-    if (depIata.length !== 3) {
+    const depIata = lastSearchOriginCode;
+    if (!depIata) {
       setRouteRecommendations([]);
       setRouteRecommendationsWarning("");
       return;
@@ -211,22 +217,35 @@ export default function SearchPage() {
     return () => {
       active = false;
     };
-  }, [flights.length, hasSearched, origin]);
+  }, [flights.length, hasSearched, lastSearchOriginCode]);
 
   async function runSearch(nextOrigin: string, nextDestination: string, nextDate: string) {
     setLoading(true);
     setError("");
     setHasSearched(true);
 
-    const routeOrigin = normalizeIata(nextOrigin);
-    const routeDestination = normalizeIata(nextDestination);
+    const routeOrigin = resolveAirportCode(nextOrigin);
+    const routeDestination = resolveAirportCode(nextDestination);
 
-    if (routeOrigin.length !== 3 || routeDestination.length !== 3) {
-      setError("Airport codes must be 3 letters. Example: LOS, NBO, DXB.");
+    if (!routeOrigin || !routeDestination) {
+      setError(
+        "Select valid airports. You can type city names like Lagos or Nairobi, or codes like LOS and NBO.",
+      );
       setFlights([]);
       setLoading(false);
       return;
     }
+
+    if (routeOrigin === routeDestination) {
+      setError("Origin and destination must be different.");
+      setFlights([]);
+      setLoading(false);
+      return;
+    }
+
+    setLastSearchOriginCode(routeOrigin);
+    setOrigin(formatAirportLabel(routeOrigin));
+    setDestination(formatAirportLabel(routeDestination));
 
     try {
       const query = new URLSearchParams({
@@ -244,12 +263,12 @@ export default function SearchPage() {
       if (!response.ok) {
         setError(payload.message ?? "Unable to search flights.");
         setFlights([]);
-        setActiveRouteLabel(`${routeOrigin} to ${routeDestination}`);
+        setActiveRouteLabel(formatRouteLabel(routeOrigin, routeDestination));
         return;
       }
 
       setFlights(payload.data ?? []);
-      setActiveRouteLabel(`${routeOrigin} to ${routeDestination}`);
+      setActiveRouteLabel(formatRouteLabel(routeOrigin, routeDestination));
     } catch {
       setError("Network error while searching flights.");
       setFlights([]);
@@ -293,33 +312,31 @@ export default function SearchPage() {
               <AirplaneTakeoff size={15} weight="bold" />
               Flight Search
             </p>
-            <h1 className="mt-3 text-3xl font-bold text-white sm:text-4xl">Find Flights by Airport Code</h1>
+            <h1 className="mt-3 text-3xl font-bold text-white sm:text-4xl">Find Flights by City or Airport</h1>
             <p className="mt-3 max-w-2xl text-sm text-slate-100 sm:text-base">
-              Enter three-letter IATA airport codes and a departure date to view active routes and live
-              seat availability.
+              Type a city, airport name, or IATA code, then choose a departure date to view active routes
+              and live seat availability.
             </p>
           </div>
 
           <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-slate-100">
-            Example format: <span className="font-mono font-semibold">LOS</span> to <span className="font-mono font-semibold">NBO</span>
+            Example format: <span className="font-mono font-semibold">{formatAirportLabel("LOS")}</span> to{" "}
+            <span className="font-mono font-semibold">{formatAirportLabel("NBO")}</span>
           </div>
         </div>
       </section>
 
       <section className="card-shell rounded-3xl p-6 sm:p-7">
         <form onSubmit={handleSearch} className="grid gap-4 lg:grid-cols-[1fr_auto_1fr_1fr_auto] lg:items-end">
-          <label className="space-y-2 text-sm text-text-muted" htmlFor="search-origin">
-            Origin code
-            <input
-              id="search-origin"
-              className="field"
-              maxLength={3}
-              value={origin}
-              onChange={(event) => setOrigin(normalizeIata(event.target.value))}
-              placeholder="LOS"
-              required
-            />
-          </label>
+          <AirportCombobox
+            id="search-origin"
+            label="Origin city or airport"
+            value={origin}
+            onChange={setOrigin}
+            options={airportDirectory}
+            placeholder={formatAirportLabel("LOS")}
+            required
+          />
 
           <div className="flex items-end justify-center pb-1">
             <button
@@ -333,18 +350,15 @@ export default function SearchPage() {
             </button>
           </div>
 
-          <label className="space-y-2 text-sm text-text-muted" htmlFor="search-destination">
-            Destination code
-            <input
-              id="search-destination"
-              className="field"
-              maxLength={3}
-              value={destination}
-              onChange={(event) => setDestination(normalizeIata(event.target.value))}
-              placeholder="NBO"
-              required
-            />
-          </label>
+          <AirportCombobox
+            id="search-destination"
+            label="Destination city or airport"
+            value={destination}
+            onChange={setDestination}
+            options={airportDirectory}
+            placeholder={formatAirportLabel("NBO")}
+            required
+          />
 
           <label className="space-y-2 text-sm text-text-muted" htmlFor="search-date">
             Departure date
@@ -366,17 +380,17 @@ export default function SearchPage() {
         </form>
 
         <div className="mt-4 rounded-xl border border-border-default bg-surface-muted px-4 py-3 text-xs text-text-muted">
-          IATA quick list:
+          Quick picks:
           <div className="mt-2 flex flex-wrap gap-2">
             {iataExamples.map((code) => (
               <button
                 key={code}
                 type="button"
-                onClick={() => setOrigin(code)}
+                onClick={() => setOrigin(formatAirportLabel(code))}
                 className="focus-ring rounded-full border border-border-default bg-surface-raised px-2.5 py-1 font-mono font-semibold text-text-default transition hover:bg-surface-base"
-                title={`Set origin to ${code}`}
+                title={`Set origin to ${formatAirportLabel(code)}`}
               >
-                {code}
+                {formatAirportLabel(code)}
               </button>
             ))}
           </div>
@@ -422,7 +436,7 @@ export default function SearchPage() {
                       <div>
                         <p className="text-xs uppercase tracking-[0.16em] text-text-muted">{flight.flightNumber}</p>
                         <h3 className="mt-1 text-lg font-semibold text-text-default">
-                          {flight.origin} to {flight.destination}
+                          {formatRouteLabel(flight.origin, flight.destination)}
                         </h3>
                         <p className="mt-1 text-sm text-text-muted">
                           Departure: {new Date(flight.departureDateTime).toLocaleString()}
@@ -463,7 +477,7 @@ export default function SearchPage() {
             {routeRecommendations.length > 0 ? (
               <div className="card-shell rounded-2xl p-6">
                 <p className="text-sm font-semibold text-text-default">
-                  Suggested routes from {normalizeIata(origin)}
+                  Suggested routes from {formatAirportLabel(lastSearchOriginCode)}
                 </p>
                 {routeRecommendationsWarning ? (
                   <p className="mt-1 text-xs text-text-muted">{routeRecommendationsWarning}</p>
@@ -475,7 +489,7 @@ export default function SearchPage() {
                       href={`/search?origin=${route.depIata}&destination=${route.arrIata}&date=${date}`}
                       className="btn-secondary inline-flex items-center gap-2"
                     >
-                      {route.depIata} to {route.arrIata}
+                      {formatRouteLabel(route.depIata, route.arrIata)}
                     </Link>
                   ))}
                 </div>
@@ -490,7 +504,7 @@ export default function SearchPage() {
                     <div key={flight.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-default bg-surface-muted p-3">
                       <div>
                         <p className="text-sm font-semibold text-text-default">
-                          {flight.origin} to {flight.destination}
+                          {formatRouteLabel(flight.origin, flight.destination)}
                         </p>
                         <p className="text-xs text-text-muted">{flight.flightNumber}</p>
                       </div>
@@ -523,7 +537,7 @@ export default function SearchPage() {
                       </div>
 
                       <h3 className="mt-3 text-xl font-semibold text-text-default">
-                        {flight.origin} to {flight.destination}
+                        {formatRouteLabel(flight.origin, flight.destination)}
                       </h3>
 
                       <div className="mt-3 grid gap-2 text-sm text-text-muted sm:grid-cols-2">
